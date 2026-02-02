@@ -6,8 +6,10 @@ def get_user_keyboard(registered: bool = True) -> ReplyKeyboardMarkup:
         [KeyboardButton(text="🍓 Мои монеты"), KeyboardButton(text="💬 Чат с админом")],
         [KeyboardButton(text="🤝 Моя реферальная ссылка"), KeyboardButton(text="🛒 Магазин")],
         [KeyboardButton(text="📱 Соц. сети"), KeyboardButton(text="📍 Где мы")],
+        [KeyboardButton(text="🚀 Релиз на питчинг")],
         [KeyboardButton(text="🧺 Заказ вещей")],
     ]
+
     if not registered:
         buttons.append([KeyboardButton(text="📝 Регистрация")])
 

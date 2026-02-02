@@ -5,10 +5,12 @@ admin_keyboard = ReplyKeyboardMarkup(
         [KeyboardButton(text="📊 Статистика"), KeyboardButton(text="📁 Все записи")],
         [KeyboardButton(text="📨 Рассылка"), KeyboardButton(text="🍓 Монеты")],
         [KeyboardButton(text="📤 Экспорт Excel"), KeyboardButton(text="👥 Пользователи")],
-        [KeyboardButton(text="🛍️ Магазин")], [KeyboardButton(text="🎁 Реф. Награда")]
+        [KeyboardButton(text="📮 Релизы на питчинг")],
+        [KeyboardButton(text="🛍️ Магазин"), KeyboardButton(text="🎁 Реф. Награда")],
     ],
     resize_keyboard=True
 )
+
 
 
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton

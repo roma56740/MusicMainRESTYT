@@ -81,6 +81,31 @@ def init_db():
     )
     """)
 
+    # =========================
+    # Pitching requests
+    # =========================
+    c.execute("""
+        CREATE TABLE IF NOT EXISTS pitching_requests (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            telegram_id INTEGER NOT NULL,
+            username TEXT DEFAULT '',
+            created_at TEXT NOT NULL,
+
+            release_artist TEXT NOT NULL,
+            description TEXT NOT NULL,
+            photos_link TEXT NOT NULL,
+            listen_link TEXT NOT NULL,
+            clip_link TEXT DEFAULT '',
+            socials TEXT NOT NULL,
+            extra TEXT NOT NULL,
+
+            status TEXT NOT NULL DEFAULT 'new',
+            pdf_path TEXT DEFAULT ''
+        )
+    """)
+    c.execute("CREATE INDEX IF NOT EXISTS idx_pitching_requests_user ON pitching_requests(telegram_id)")
+    c.execute("CREATE INDEX IF NOT EXISTS idx_pitching_requests_status ON pitching_requests(status)")
+
 
     conn.commit()
     conn.close()
@@ -508,3 +533,132 @@ def mark_purchase_as_used(purchase_id: int):
     """, (purchase_id,))
     conn.commit()
     conn.close()
+
+
+# =========================
+# Pitching requests helpers
+# =========================
+
+def add_pitching_request(
+    telegram_id: int,
+    username: str,
+    release_artist: str,
+    description: str,
+    photos_link: str,
+    listen_link: str,
+    clip_link: str,
+    socials: str,
+    extra: str,
+    status: str = "new",
+    pdf_path: str = "",
+) -> int:
+    from datetime import datetime
+    conn = sqlite3.connect("users.db")
+    c = conn.cursor()
+
+    created_at = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+    c.execute("""
+        INSERT INTO pitching_requests (
+            telegram_id, username, created_at,
+            release_artist, description, photos_link, listen_link, clip_link, socials, extra,
+            status, pdf_path
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    """, (
+        int(telegram_id), username or "", created_at,
+        release_artist, description, photos_link, listen_link, clip_link or "", socials, extra,
+        status, pdf_path or ""
+    ))
+
+    req_id = c.lastrowid
+    conn.commit()
+    conn.close()
+    return int(req_id)
+
+
+def set_pitching_request_pdf_path(req_id: int, pdf_path: str) -> None:
+    conn = sqlite3.connect("users.db")
+    c = conn.cursor()
+    c.execute("UPDATE pitching_requests SET pdf_path = ? WHERE id = ?", (pdf_path or "", int(req_id)))
+    conn.commit()
+    conn.close()
+
+
+def set_pitching_request_status(req_id: int, status: str) -> None:
+    conn = sqlite3.connect("users.db")
+    c = conn.cursor()
+    c.execute("UPDATE pitching_requests SET status = ? WHERE id = ?", (status, int(req_id)))
+    conn.commit()
+    conn.close()
+
+
+def count_user_pitching_requests(telegram_id: int) -> int:
+    conn = sqlite3.connect("users.db")
+    c = conn.cursor()
+    c.execute("SELECT COUNT(*) FROM pitching_requests WHERE telegram_id = ?", (int(telegram_id),))
+    n = int(c.fetchone()[0])
+    conn.close()
+    return n
+
+
+def list_user_pitching_requests(telegram_id: int, offset: int, limit: int) -> list[dict]:
+    conn = sqlite3.connect("users.db")
+    conn.row_factory = sqlite3.Row
+    c = conn.cursor()
+    c.execute("""
+        SELECT *
+        FROM pitching_requests
+        WHERE telegram_id = ?
+        ORDER BY id DESC
+        LIMIT ? OFFSET ?
+    """, (int(telegram_id), int(limit), int(offset)))
+    rows = c.fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
+
+
+def count_all_pitching_requests() -> int:
+    conn = sqlite3.connect("users.db")
+    c = conn.cursor()
+    c.execute("SELECT COUNT(*) FROM pitching_requests")
+    n = int(c.fetchone()[0])
+    conn.close()
+    return n
+
+
+def list_all_pitching_requests(offset: int, limit: int) -> list[dict]:
+    conn = sqlite3.connect("users.db")
+    conn.row_factory = sqlite3.Row
+    c = conn.cursor()
+    c.execute("""
+        SELECT *
+        FROM pitching_requests
+        ORDER BY id DESC
+        LIMIT ? OFFSET ?
+    """, (int(limit), int(offset)))
+    rows = c.fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
+
+
+def get_pitching_request(req_id: int) -> dict | None:
+    conn = sqlite3.connect("users.db")
+    conn.row_factory = sqlite3.Row
+    c = conn.cursor()
+    c.execute("SELECT * FROM pitching_requests WHERE id = ?", (int(req_id),))
+    row = c.fetchone()
+    conn.close()
+    return dict(row) if row else None
+
+
+def delete_pitching_request(req_id: int, telegram_id: int | None = None) -> bool:
+    conn = sqlite3.connect("users.db")
+    c = conn.cursor()
+    if telegram_id is None:
+        c.execute("DELETE FROM pitching_requests WHERE id = ?", (int(req_id),))
+    else:
+        c.execute("DELETE FROM pitching_requests WHERE id = ? AND telegram_id = ?", (int(req_id), int(telegram_id)))
+    ok = (c.rowcount or 0) > 0
+    conn.commit()
+    conn.close()
+    return ok

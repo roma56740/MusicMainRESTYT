@@ -6,9 +6,10 @@ from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.client.default import DefaultBotProperties
 from dotenv import load_dotenv
 from handlers import register
-from handlers import start, booking, social, location  
+from handlers import start, booking, social, location
 from db import init_db
 from handlers import referral
+from handlers import pitching
 from notifier import check_bookings_loop  # ⏰ фоновая проверка записей
 
 # Загрузка .env
@@ -38,6 +39,7 @@ async def main():
     dp.include_router(social.router)
     dp.include_router(location.router)
     dp.include_router(referral.router)
+    dp.include_router(pitching.router)
 
     # Запуск фона: уведомления и подтверждения
     asyncio.create_task(check_bookings_loop(bot))
